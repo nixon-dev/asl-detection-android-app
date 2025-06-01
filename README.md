@@ -27,7 +27,7 @@ An android app that identify Sign Language via Camera or Screen
    git clone https://github.com/nixon-dev/asl-detection-android-app.git
 2. **Download dataset or copy download link**
    ```bash
-   - https://universe.roboflow.com/nixondev/asl-1e9ff/dataset/7
+   https://universe.roboflow.com/nixondev/asl-1e9ff/dataset/7
 3. Train your model
 4. Convert Model
 5. Copy .tflite model to asset folder in android app/src/main/assets
