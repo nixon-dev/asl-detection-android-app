@@ -61,7 +61,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Header Row: Icon + Title -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -86,7 +85,6 @@
                     android:textColor="@android:color/black"/>
             </LinearLayout>
 
-            <!-- Description -->
             <TextView
                 android:id="@+id/cameraDescription"
                 android:layout_width="match_parent"
@@ -97,7 +95,6 @@
                 android:textStyle="normal"
                 android:textColor="@android:color/black" />
 
-            <!-- Button -->
             <Button
                 android:id="@+id/cameraDetectionBtn"
                 android:layout_width="match_parent"
@@ -130,7 +127,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Header Row: Icon + Title -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -155,7 +151,6 @@
                     android:textColor="@android:color/black"/>
             </LinearLayout>
 
-            <!-- Description -->
             <TextView
                 android:id="@+id/screenDescription"
                 android:layout_width="match_parent"
@@ -166,7 +161,6 @@
                 android:textStyle="normal"
                 android:textColor="@android:color/black" />
 
-            <!-- Button -->
             <Button
                 android:id="@+id/screenDetectionBtn"
                 android:layout_width="match_parent"

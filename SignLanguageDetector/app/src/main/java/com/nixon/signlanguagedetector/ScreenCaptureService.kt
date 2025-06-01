@@ -68,7 +68,6 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
 
     private lateinit var detector: DetectorScreen
 
-    // AtomicReference for safely passing the current full-screen bitmap
     private val currentFullScreenBitmap = AtomicReference<Bitmap?>()
 
     private lateinit var imageProcessingHandler: Handler
@@ -168,10 +167,7 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
                     Log.e(TAG, "Error acquiring image or processing: ${e.message}", e)
                 } finally {
                     image?.close()
-                    // IMPORTANT: DO NOT RECYCLE `bitmap` here, as `croppedBitmap` might be needed by currentFullScreenBitmap.
-                    // The `croppedBitmap` set in `currentFullScreenBitmap` will be recycled when it's no longer needed,
-                    // or when a new one replaces it. For now, let the system handle `bitmap` if it's the original.
-                    // If you create `croppedBitmap` as a new mutable copy, you'd recycle `bitmap` here.
+
                 }
             }
         }, imageProcessingHandler)
@@ -239,7 +235,7 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
                         windowManager?.updateViewLayout(overlayView, params)
                     }
                     MotionEvent.ACTION_UP -> {
-                        // Do nothing specific on UP for now
+
                     }
                 }
                 return true
@@ -314,7 +310,6 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
         detector.clear()
         Log.d(TAG, "Detector resources cleared.")
 
-        // Recycle the last held bitmap if it exists
         currentFullScreenBitmap.getAndSet(null)?.recycle()
 
         stopForeground(Service.STOP_FOREGROUND_REMOVE)
@@ -330,14 +325,12 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
         Log.d(TAG, "VirtualDisplay released.")
     }
 
-    // --- Detector.DetectorListener Implementations ---
     override fun onEmptyDetect() {
         Handler(Looper.getMainLooper()).post {
-            // Display original full screen bitmap if no objects detected
             currentFullScreenBitmap.get()?.let {
                 overlayImageView.setImageBitmap(it)
             } ?: run {
-                overlayImageView.setImageBitmap(null) // Clear if no bitmap available
+                overlayImageView.setImageBitmap(null)
             }
             detectedObjectTextView.text = "No sign language detected."
             inferenceTimeTextView.text = "0ms"
@@ -364,52 +357,41 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
 
             val detectedNames = StringBuilder()
             var handBox: BoundingBox? = null
-            // Find a hand or person bounding box to zoom into
             for (box in boundingBoxes) {
                 val confidence = box.cnf * 100
                 detectedNames.append("${box.clsName}\n")
 
-                // Prioritize 'hand' or 'person' for zoom
                 if (box.clsName.equals("hand", ignoreCase = true) || box.clsName.equals("person", ignoreCase = true)) {
-                    // For now, just take the first one. You might want to pick the largest,
-                    // or highest confidence, or a specific region if multiple hands are present.
-                    if (handBox == null || box.cnf > handBox.cnf) { // Pick the most confident hand/person
+                    if (handBox == null || box.cnf > handBox.cnf) {
                         handBox = box
                     }
                 }
             }
             detectedObjectTextView.text = detectedNames.toString().trim()
 
-            // Perform zoom/crop if a hand/person was found
             if (handBox != null) {
                 try {
-                    // Calculate pixel coordinates for the bounding box
                     val x1Px = (handBox.x1 * originalFrameWidth).toInt()
                     val y1Px = (handBox.y1 * originalFrameHeight).toInt()
                     val x2Px = (handBox.x2 * originalFrameWidth).toInt()
                     val y2Px = (handBox.y2 * originalFrameHeight).toInt()
 
-                    // Calculate width and height of the detected box in pixels
                     val detectedWidthPx = x2Px - x1Px
                     val detectedHeightPx = y2Px - y1Px
 
-                    // Define padding/expansion around the detected box (e.g., 20% extra padding)
-                    val padding = 0.2f // 20% padding
+                    val padding = 0.2f
                     val expandWidth = (detectedWidthPx * padding).toInt()
                     val expandHeight = (detectedHeightPx * padding).toInt()
 
-                    // Calculate expanded crop region
                     var cropX1 = maxOf(0, x1Px - expandWidth)
                     var cropY1 = maxOf(0, y1Px - expandHeight)
                     var cropX2 = minOf(originalFrameWidth, x2Px + expandWidth)
                     var cropY2 = minOf(originalFrameHeight, y2Px + expandHeight)
 
-                    // Ensure square aspect ratio for better display (optional, but often good for ML inputs)
                     val currentCropWidth = cropX2 - cropX1
                     val currentCropHeight = cropY2 - cropY1
-                    val desiredCropSize = maxOf(currentCropWidth, currentCropHeight) // Make it square based on the larger dimension
+                    val desiredCropSize = maxOf(currentCropWidth, currentCropHeight)
 
-                    // Adjust crop dimensions to be square, centered around original detected box
                     val centerX = (x1Px + x2Px) / 2
                     val centerY = (y1Px + y2Px) / 2
 
@@ -418,7 +400,6 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
                     cropX2 = minOf(originalFrameWidth, centerX + desiredCropSize / 2)
                     cropY2 = minOf(originalFrameHeight, centerY + desiredCropSize / 2)
 
-                    // Final check to ensure crop doesn't go out of bounds after squaring
                     if (cropX2 - cropX1 < desiredCropSize) {
                         if (cropX1 == 0) cropX2 = desiredCropSize
                         else if (cropX2 == originalFrameWidth) cropX1 = originalFrameWidth - desiredCropSize
@@ -428,13 +409,11 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
                         else if (cropY2 == originalFrameHeight) cropY1 = originalFrameHeight - desiredCropSize
                     }
 
-                    // Re-adjust if the desired size makes it go out of bounds at edges
                     cropX1 = maxOf(0, cropX1)
                     cropY1 = maxOf(0, cropY1)
                     cropX2 = minOf(originalFrameWidth, cropX2)
                     cropY2 = minOf(originalFrameHeight, cropY2)
 
-                    // Final check to ensure width/height are positive
                     val finalCropWidth = cropX2 - cropX1
                     val finalCropHeight = cropY2 - cropY1
 
@@ -447,23 +426,17 @@ class ScreenCaptureService : Service(), DetectorScreen.DetectorListener {
                             finalCropHeight
                         )
                         overlayImageView.setImageBitmap(zoomedBitmap)
-                        // It's good practice to recycle the previous bitmap if you manage its lifecycle.
-                        // However, since currentFullScreenBitmap is AtomicReference, it's replaced
-                        // and Android's GC will handle the old one eventually unless memory is tight.
-                        // For this specific use case, where new bitmaps are constantly created,
-                        // if you hold onto the returned zoomedBitmap, you'd need to recycle it
-                        // before setting a new one. For simplicity with ImageView, it manages it.
+
                     } else {
                         Log.w(TAG, "Calculated crop region invalid: ($cropX1,$cropY1) to ($cropX2,$cropY2)")
-                        overlayImageView.setImageBitmap(fullScreenBitmap) // Fallback to full screen
+                        overlayImageView.setImageBitmap(fullScreenBitmap)
                     }
 
                 } catch (e: Exception) {
                     Log.e(TAG, "Error cropping bitmap for zoom: ${e.message}", e)
-                    overlayImageView.setImageBitmap(fullScreenBitmap) // Fallback
+                    overlayImageView.setImageBitmap(fullScreenBitmap)
                 }
             } else {
-                // If no hand/person detected, display the full screen bitmap
                 overlayImageView.setImageBitmap(fullScreenBitmap)
             }
         }

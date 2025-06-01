@@ -180,7 +180,7 @@ class CameraDetectionActivity : AppCompatActivity(), Detector.DetectorListener {
 
     override fun onDetect(boundingBoxes: List<BoundingBox>, inferenceTime: Long) {
         if (boundingBoxes.isNotEmpty()) {
-            val topResult = boundingBoxes.maxByOrNull { it.cnf } // highest confidence box
+            val topResult = boundingBoxes.maxByOrNull { it.cnf }
             val detectedClass = topResult?.clsName ?: "Unknown"
 
             runOnUiThread {

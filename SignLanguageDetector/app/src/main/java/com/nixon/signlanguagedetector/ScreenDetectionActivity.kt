@@ -40,7 +40,6 @@ class ScreenDetectionActivity : AppCompatActivity() {
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                // User granted MediaProjection permission
                 Log.d(TAG, "MediaProjection permission granted.")
                 startScreenCaptureService(result.data!!)
             } else {
@@ -54,7 +53,6 @@ class ScreenDetectionActivity : AppCompatActivity() {
         ) { result ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
                 Log.d(TAG, "Overlay permission granted.")
-                // Now that overlay permission is granted, request MediaProjection
                 requestMediaProjectionPermission()
             } else {
                 Log.w(TAG, "Overlay permission denied.")
@@ -67,11 +65,9 @@ class ScreenDetectionActivity : AppCompatActivity() {
         ) { isGranted ->
             if (isGranted) {
                 Log.d(TAG, "Notification permission granted.")
-                // Proceed with other permissions or start service
                 requestOverlayPermission()
             } else {
                 Log.w(TAG, "Notification permission denied. Foreground service notification may not show.")
-                // Still try to proceed, but warn the user.
                 requestOverlayPermission()
             }
         }
@@ -85,7 +81,6 @@ class ScreenDetectionActivity : AppCompatActivity() {
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
         findViewById<Button>(R.id.startButton).setOnClickListener {
-            // First, request notification permission (Android 13+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -93,7 +88,6 @@ class ScreenDetectionActivity : AppCompatActivity() {
                     requestOverlayPermission()
                 }
             } else {
-                // For older Android versions, directly request overlay
                 requestOverlayPermission()
             }
         }
@@ -108,7 +102,6 @@ class ScreenDetectionActivity : AppCompatActivity() {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             overlayPermissionLauncher.launch(intent)
         } else {
-            // Overlay permission already granted or not needed on older SDKs
             requestMediaProjectionPermission()
         }
     }
@@ -125,7 +118,6 @@ class ScreenDetectionActivity : AppCompatActivity() {
             putExtra("data", data)
         }
 
-        // Start the service as a foreground service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ContextCompat.startForegroundService(this, serviceIntent)
         } else {
