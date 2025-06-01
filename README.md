@@ -17,7 +17,7 @@ An android app that identify Sign Language via Camera or Screen
 
 - **Android Studio**
 - **Libraries & APIs:**
-  - [YoloV8](https://yolov8.com) - for ojbect detection model
+  - [YoloV8](https://yolov8.com) - for object detection model
   - [Tensorflow Lite](https://ai.google.dev/edge/litert) - for conversion of model to be usuable on mobile environment 
   
 ## 🔧 Installation
